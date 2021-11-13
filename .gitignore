@@ -1,3 +1,11 @@
+# Datasets
+binary-classification/data/kidney_disease.csv
+binary-classification/data/data_banknote_authentication.txt
+linear-regression/data/prostate.data
+linear-regression/data/prostate.info.txt
+linear-regression/data/HousingData.csv
+
+# Python Template
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
