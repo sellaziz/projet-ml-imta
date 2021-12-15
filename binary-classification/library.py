@@ -1,15 +1,36 @@
+" Overall import "
 import numpy as np
 import scipy.io as sio
 import scipy as sp
 import matplotlib.pyplot as plt
 import pandas as pd
+from math import floor
+import statistics as s
+
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from scipy.stats import shapiro
-from sklearn.metrics import precision_score, recall_score
 from sklearn.model_selection import KFold
-from math import floor
-import statistics as s
+
+" Logistic Regression"
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import jaccard_score
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import metrics
+
+" Decision Forest "
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import cross_val_score, ShuffleSplit
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+
+" Model Validation "
+import seaborn as sns
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, log_loss, precision_score
+
+
+
+""" PREPROCESSING DATASET - RIVIERE CLEMENT """
 
 def count_NaN(data):
     no_NaN_data = data.notna()
@@ -19,6 +40,7 @@ def count_NaN(data):
             if no_NaN_data.iloc[i,k] == False:
                 countNaN[k] +=1
     return countNaN
+
 
 def replace_NaN(data):
     no_NaN_data = data
@@ -43,6 +65,7 @@ def center_and_normalize(data):
         if types_data[k] == float: #on se souhaite pas centrée réduire les labels
             center_and_normalize[k] = (center_and_normalize[k] - mean_data[k])*(1/std_data[k])
     return center_and_normalize
+
 
 def clean_data_f(data):
     data_na=data.notna() #renvoie une dataframe booléen
@@ -69,6 +92,7 @@ def clean_data_f(data):
     replace_by_Int(data)
     return data
 
+
 def clear_data_String(data,k,data_na):
     list_value={}
     data_na=data_na[k]
@@ -86,6 +110,7 @@ def clear_data_String(data,k,data_na):
         if not data_na[value]:
             data.at[value,k]=moy
 
+
 def clear_data_Float_Int(data,k,int_or_float):
     moy=data[k].mean()
     data_na=data[k].isna()
@@ -97,6 +122,7 @@ def clear_data_Float_Int(data,k,int_or_float):
     for value in range(len(data_na)):
         if data_na[value]:
             data.at[value,k]=moy
+
 
 def replace_by_Int(data):
     data_types=data.dtypes #datatype of each column
@@ -113,6 +139,18 @@ def replace_by_Int(data):
                     data.at[value,k]=list_value[data[k][value]]
             data[k] = data[k].astype(int)
 
+
+""" DATASET MANAGEMENT - SELLAMI AZIZ """
+
+def dataset_to_numpy(data, first_col=0, last_col=-1):
+    set_of_data=[]
+    for col in data.columns:
+        tmp_data = data[col]
+        set_of_data.append(tmp_data.to_numpy().T)
+    return np.vstack(tuple(set_of_data[first_col:last_col])).T
+
+
+""" SPLIT DATASET & PCA - RIVIERE CLEMENT """
 
 def split_data_df(data, test_size):
     features = list(data.columns[:-1])
@@ -139,6 +177,15 @@ def split_data_and_pca(data, test_size):
     return X_train_PCA, X_test_PCA, y_train, y_test, pca.n_components_
 
 
+def pca(data):
+    pca = PCA(n_components = 0.99)
+    X=np.array(data)
+    pca.fit(X)
+    return pca.transform(X)
+
+
+""" SHAPIRO TEST - RIVIERE CLEMENT """
+
 def shapiro_test(data):
     n = np.shape(data)[1]
     p_values = np.zeros((n))
@@ -148,7 +195,7 @@ def shapiro_test(data):
         p_values[k] = shapiro_test.pvalue
     return p_values
 
-
+""" MODEL VALIDATION : PRECISION & RECALL - SELLAMI AZIZ """
 
 def precision_recall_multilabels(y_true, y_pred, labels):
     recalls = []
@@ -169,6 +216,7 @@ def precision_recall_multilabels(y_true, y_pred, labels):
 
     return precisions, recalls
 
+""" CROSSVALIDATION - SELLAMI AZIZ """
 
 def kfold_precisions_recalls(X, y, labels, clf, kf: KFold):
     """Returns the history of precisions and recalls through K-fold training
@@ -257,34 +305,21 @@ def kfold_summarize_results(clfs_results):
             }
     return clfs_stats
 
-def dataset_to_numpy(data, first_col=0, last_col=-1):
-    set_of_data=[]
-    for col in data.columns:
-        tmp_data = data[col]
-        set_of_data.append(tmp_data.to_numpy().T)
-    return np.vstack(tuple(set_of_data[first_col:last_col])).T
+
+""" SVM - SELLAMI AZIZ """
 
 
-def pca(data):
-    pca = PCA(n_components = 0.99)
-    X=np.array(data)
-    pca.fit(X)
-    return pca.transform(X)
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import jaccard_score
-from sklearn.metrics import f1_score
+""" LOGISTIC REGRESSION - BEN AYED MARWEN """
 
-def Logistic_regression(data,test_size = 0.3):
-    X_train, X_test, y_train, y_test = split_data_df(data, test_size)
-    LR = LogisticRegression(C=0.01, solver='liblinear').fit(X_train,y_train)
+def Logistic_regression(X_train,X_test,y_train,y_test):
+    LR = LogisticRegression().fit(X_train,y_train)
     y_pred = LR.predict(X_test)
-    jaccard_scor = jaccard_score(y_test, y_pred, average='weighted')
     f1_scor = f1_score(y_test, y_pred, average='weighted')
-    return jaccard_scor, f1_scor
+    return y_pred
 
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn import metrics
+
+""" K-NEAREST NEIGHBOUR - BEN AYED MARWEN """
 
 def KNN(data, k=4, test_size = 0.3):
     #X_train, X_test, y_train, y_test = split_data_pca(data, test_size)
@@ -296,17 +331,7 @@ def KNN(data, k=4, test_size = 0.3):
     return Train_set_Accuracy, Test_set_Accuracy
 
 
-
-""" DECISION FOREST - AUBIN JULIEN """
-
-# Import scikit-learn functions
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import cross_val_score, ShuffleSplit
-# from sklearn.tree import export_graphviz
-# from graphviz import Source
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
-from sklearn.metrics import log_loss
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score
+""" DECISION FOREST & ADA BOOST - AUBIN JULIEN """
 
 # Decision forest
 def trainDecisionForest(X_train,y_train,n_trees) :
@@ -329,6 +354,7 @@ def trainDecisionForest(X_train,y_train,n_trees) :
         # Need to minimize log_loss - but we have error on dimension
     
     opt = (np.argmax(tab_score_tree) + 1) * 2 # depth for which we get the minimum score -> need to max Accuracy if used
+    print("Optimal Depth =", opt)
 
     # Train Decision forest :
     class_forest = RandomForestClassifier(n_estimators=n_trees, max_depth=opt)
@@ -354,21 +380,7 @@ def testAdaBoost(ABclf, X_test) :
     return class_adaB_predict
 
 
-# Export the tree to "plot_tree.pdf"
-def plotTree(class_tree, data):
-    plot_tree = export_graphviz(class_tree, out_file=None, feature_names=list(data.columns)[1:], filled=True) #data
-    graph = Source(plot_tree) 
-    graph.render("class_tree")
-
-    # Plot the tree
-    return graph
-
-
-
-
 """ MODEL VALIDATION - AUBIN JULIEN"""
-
-import seaborn as sns
 
 def confusionMatrix(y_test, y_predicted):
     conf_mat = confusion_matrix(y_test, y_predicted)
