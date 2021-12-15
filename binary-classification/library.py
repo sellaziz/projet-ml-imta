@@ -69,11 +69,10 @@ def replace_NaN(data):
             va_k = no_NaN_data[k]
             if va_k[i] == np.NaN:
                 count_replaced_values[k] += 1
-                va_k[i] = mean_data[k] # replace with mean
+                va_k[i] = mean_data[k]  #replace with mean
     return no_NaN_data, count_replaced_values
 
-#In practice we often ignore the shape of the distribution and just transform the data to center it by removing 
-# the mean value of each feature, then scale it by dividing non-constant features by their standard deviation.
+
 
 def center_and_normalize(data):
     """Center and Normalize a pandas Dataframe
@@ -89,14 +88,17 @@ def center_and_normalize(data):
     mean_data, std_data = np.mean(data), np.std(data)
     types_data = data.dtypes
     for k in center_and_normalize:
-        if types_data[k] == float: #on se souhaite pas centrée réduire les labels
+        if types_data[k] == float: 
             center_and_normalize[k] = (center_and_normalize[k] - mean_data[k])*(1/std_data[k])
     return center_and_normalize
 
 
 def clean_data_f(data):
-    """Cleaning function for the datasets, that center and normalize the data and 
-       replace strings by integers
+    """
+    Clean the data :
+    - Handle missing and categorical values
+    - Replace missing values by average or median values
+    - Center and normalize the data
     Parameters
     ----------
     data : pandas Dataframe
@@ -105,33 +107,32 @@ def clean_data_f(data):
     -------
     data : pandas Dataframe
     """
-    data_na=data.notna() # renvoie une dataframe booléen
-    data_types=data.dtypes # datatype of each column
-    for k in data:
-        for i in range(len(data_na[k])):
-            # Il est possible que certains string aient des \t ou des " ", il faut les enlever
-            if type(data[k][i])==str:
-                data.at[i,k]=data[k][i].replace(" ","")
-                data.at[i,k]=data[k][i].replace("\t","")
-                # Si un des NaN avait ce genre de caractères alors ils n'étaient pas repérés et comptaient
-                # Pour une valeur: On modifie donc la table data_na 
-                if data[k][i]=="?":
-                    data_na.at[i,k]=False
-    for index in data:
-        if data_types[index]==object:
-            clear_data_String(data,index,data_na)
+    data_na=data.notna() # dataframe booléen NaN
+    data_types=data.dtypes 
+    for j in data:
+        for i in range(len(data_na[j])):
+            if type(data[j][i])==str:
+                data.at[i,j]=data[j][i].replace(" ","") #évite les espaces et retour ligne
+                data.at[i,j]=data[j][i].replace("\t","")
+                if data[j][i]=="?": 
+                    data_na.at[i,j]=False 
+    for k in data: #on clean feature par feature
+        if data_types[k]==object:
+            clear_string(data,k,data_na) #appel fonction clear_string pour remplacer missing values par value associé au string
         else:
-            if data_types[index]==int:
-                clear_data_Float_Int(data,index,int)
+            if data_types[k]==int:
+                clear_float_int(data,k,int) #appel fonction  clear_float_int pour remplacer missing value par la moyenne 
             else:
-                clear_data_Float_Int(data,index,float)
+                clear_float_int(data,k,float)
     data = center_and_normalize(data)
     replace_by_Int(data)
     return data
 
 
-def clear_data_String(data,k,data_na):
+def clear_string(data,k,data_na):
     """
+    Replace the missing values with the value of the string which is the most present 
+    of the columns whose values are not numbers
     Parameters
     ----------
     data : pandas Dataframe
@@ -140,25 +141,27 @@ def clear_data_String(data,k,data_na):
     -------
     data : pandas Dataframe
     """
-    list_value={}
+    dic={}
     data_na=data_na[k]
-    for value in range(len(data_na)):
-        if data_na[value]:
-            if data[k][value] not in list_value:
-                list_value[data[k][value]]=0
+    for i in range(len(data_na)):
+        if data_na[i]: 
+            if data[k][i] not in dic:
+                dic[data[k][i]]=0
             else:
-                list_value[data[k][value]]+=1
-    moy,Max=data[k][0],0
-    for value in list_value:
-        if list_value[value]>Max:
-            Max,moy=list_value[value],value
-    for value in range(len(data)):
-        if not data_na[value]:
-            data.at[value,k]=moy
+                dic[data[k][i]]+=1
+    mean,max=data[k][0],0
+    for i in dic:
+        if dic[i]>max:
+            max,mean=dic[i],i
+    for i in range(len(data)):
+        if not data_na[i]: #si NaN
+            data.at[i,k]=mean #replace with mean
+    
 
 
-def clear_data_Float_Int(data,k,int_or_float):
+def clear_float_int(data,k,int_float):
     """
+    Replace the missing values with the average of the columns whose values are float or int
     Parameters
     ----------
     data : pandas Dataframe
@@ -167,20 +170,21 @@ def clear_data_Float_Int(data,k,int_or_float):
     -------
     data : pandas Dataframe
     """
-    moy=data[k].mean()
+    mean=data[k].mean()
     data_na=data[k].isna()
-    if int_or_float==int:
-        if moy-floor(moy)<0.5:
-                moy=int(moy)
+    if int_float==int:
+        if mean-floor(mean)<0.5: #arrondi entier sup ou inf pour garder un int
+                mean=int(mean)
         else:
-                moy=int(moy + 1)
-    for value in range(len(data_na)):
-        if data_na[value]:
-            data.at[value,k]=moy
+                mean=int(mean + 1)
+    for i in range(len(data_na)):
+        if data_na[i]:
+            data.at[i,k]=mean #replace with mean
 
 
 def replace_by_Int(data):
     """
+    Replace string by int 
     Parameters
     ----------
     data : pandas Dataframe
@@ -192,16 +196,16 @@ def replace_by_Int(data):
     data_types=data.dtypes #datatype of each column
     for k in data:
         if data_types[k]==object:
-            list_value={}
+            dic={}
             data_na=data[k].isna()
-            number=0
-            for value in range(len(data_na)):
-                if not data_na[value]:
-                    if data[k][value] not in list_value:
-                        list_value[data[k][value]]=number
-                        number+=1
-                    data.at[value,k]=list_value[data[k][value]]
-            data[k] = data[k].astype(int)
+            nb=0
+            for i in range(len(data_na)):
+                if not data_na[i]: #Si pas NaN
+                    if data[k][i] not in dic:
+                        dic[data[k][i]]=nb
+                        nb+=1
+                    data.at[i,k]=dic[data[k][i]]
+            data[k] = data[k].astype(int) #cast object to int
 
 
 """ DATASET MANAGEMENT - SELLAMI AZIZ """
