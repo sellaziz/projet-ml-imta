@@ -293,16 +293,16 @@ def KNN(data, k=4, test_size = 0.3):
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_val_score, ShuffleSplit
 from sklearn.tree import export_graphviz
-#from graphviz import Source
+from graphviz import Source
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.metrics import log_loss
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score
 
 # Decision forest
-def trainDecisionForest(X,y,n_trees) :
+def trainDecisionForest(X_train,y_train,n_trees) :
 
     # Cross-validation procedure
-    cvp = ShuffleSplit(n_splits=1000, test_size=1/3, train_size=2/3)
+    cvp = ShuffleSplit(n_splits=100, test_size=1/3, train_size=2/3)
 
     # Define the max depths between 1 and 20
     n_depths = 20
@@ -312,16 +312,17 @@ def trainDecisionForest(X,y,n_trees) :
     tab_score_tree = np.zeros(n_depths)
     for i in range(len(depths)):
         class_tree = DecisionTreeClassifier(max_depth=depths[i])
-        tab_score_tree[i] = s.median(-cross_val_score(class_tree, X, y, scoring='neg_log_loss', cv=cvp))
-        # Accuracy score = median(cross_val_score(class_tree, X, y, scoring='accuracy', cv=cvp)) 
+        # Accuracy score
+        tab_score_tree[i] = s. median(cross_val_score(class_tree, X_train, y_train, scoring='accuracy', cv=cvp)) 
+        
+        # Neg_log_loss : tab_score_tree[i] = s.median(-cross_val_score(class_tree, X, y, scoring='neg_log_loss', cv=cvp))
+        # Need to minimize log_loss - but we have error on dimension
     
-    #plot(depths, tab_accuracy_tree)
-
-    opt = (np.argmin(tab_score_tree) + 1) * 2 # depth for which we get the minimum score -> need to max Accuracy if used
+    opt = (np.argmax(tab_score_tree) + 1) * 2 # depth for which we get the minimum score -> need to max Accuracy if used
 
     # Train Decision forest :
     class_forest = RandomForestClassifier(n_estimators=n_trees, max_depth=opt)
-    class_forest.fit(X, y)
+    class_forest.fit(X_train, y_train)
     return class_forest
 
 
@@ -353,18 +354,20 @@ def plotTree(class_tree, data):
     return graph
 
 
+
+
 """ MODEL VALIDATION - AUBIN JULIEN"""
 
 import seaborn as sns
 
-def confusionMatrix(y_test,y_predicted):
+def confusionMatrix(y_test, y_predicted):
     conf_mat = confusion_matrix(y_test, y_predicted)
-    conf_map = sns.heatmap(conf_mat,annot=True)
+    conf_map = sns.heatmap(conf_mat, annot=True)
     return conf_map
 
-def validateModel(y_test,y_pred):
-    lloss = log_loss(y_test,y_pred,normalize=True)
-    acc = accuracy_score(y_test,y_pred,normalize=True)*100
-    rec = recall_score(y_test,y_pred, average = 'binary') * 100
-    f1 = f1_score(y_test,y_pred)
+def validateModel(y_test, y_pred):
+    lloss = log_loss(y_test, y_pred, normalize=True)
+    acc = accuracy_score(y_test, y_pred, normalize=True)*100
+    rec = recall_score(y_test, y_pred, average = 'binary') * 100
+    f1 = f1_score(y_test, y_pred)
     print(f'Your model has a log_loss of : {lloss}%\nYour model has an accuracy of : {acc}%\nYour model has a recall of : {rec}%\nYour model has a F1 score = {f1} ')
