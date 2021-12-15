@@ -17,7 +17,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import jaccard_score
 
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn import metrics
+from sklearn import metrics, svm
 
 " Decision Forest "
 from sklearn.tree import DecisionTreeClassifier
@@ -27,7 +27,6 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 " Model Validation "
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, log_loss, precision_score
-
 
 
 """ PREPROCESSING DATASET - RIVIERE CLEMENT """
@@ -197,23 +196,16 @@ def shapiro_test(data):
 
 """ MODEL VALIDATION : PRECISION & RECALL - SELLAMI AZIZ """
 
-def precision_recall_multilabels(y_true, y_pred, labels):
+def precision_recall(y_true, y_pred, labels=[0,1]):
     recalls = []
     precisions = []
     for label in labels:
-
         pos_true = y_true == label
         pos_pred = y_pred == label
 
-        # By hand
-        # true_pos = pos_pred & pos_true
-        # recalls.append(np.sum(true_pos) / np.sum(pos_true))
-        # precisions.append(np.sum(true_pos) / np.sum(pos_pred))
-
-        # With sklearn
-        precisions.append(precision_score(y_true, y_pred))
-        recalls.append(recall_score(y_true, y_pred))
-
+        true_pos = pos_pred & pos_true
+        recalls.append(np.sum(true_pos) / np.sum(pos_true))
+        precisions.append(np.sum(true_pos) / np.sum(pos_pred))
     return precisions, recalls
 
 """ CROSS-VALIDATION - SELLAMI AZIZ """
@@ -241,7 +233,7 @@ def kfold_precisions_recalls(X, y, labels, clf, kf: KFold):
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
 
-        precisions_, recalls_ = precision_recall_multilabels(y_test, y_pred, labels)
+        precisions_, recalls_ = precision_recall(y_test, y_pred, labels)
 
         precisions.append(precisions_)
         recalls.append(recalls_)
@@ -268,6 +260,7 @@ def kfold_multimodels_report(clfs_results):
 
     with each list[list] being of shape (num_folds, num_classes).
     """
+    print("classes:             [   0    1]")
     clfs_stats = kfold_summarize_results(clfs_results)
     with np.printoptions(precision=2, floatmode="fixed"):
         for clf_name, clf_stats in clfs_stats.items():
@@ -305,9 +298,29 @@ def kfold_summarize_results(clfs_results):
             }
     return clfs_stats
 
+def crossValidation(X,y,clfs,classes_labels=[0,1], n_spl=10):
+    clfs_results = {clf_name: {"precisions": None, "recalls": None} for clf_name in clfs}
+    kf = KFold(n_splits=n_spl, shuffle=True, random_state=34)
+    for clf_name, clf in clfs.items():
+        precisions, recalls = kfold_precisions_recalls(X, y, classes_labels, clf, kf)
+        clfs_results[clf_name]["precisions"] = precisions
+        clfs_results[clf_name]["recalls"] = recalls
+    kfold_multimodels_report(clfs_results)
+
 
 """ SVM - SELLAMI AZIZ """
-
+def testSVM(X,y):
+    clf = svm.SVC()
+    train_size = 100
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=train_size, shuffle=True
+    )
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    precisions, recalls = precision_recall(y_test, y_pred)
+    print(f"precision for class 0,1 : {[ round(elem, 2) for elem in precisions ] }")
+    print(f"recalls   for class 0,1 : {[ round(elem, 2) for elem in recalls ] }")
+    return precisions, recalls
 
 
 """ LOGISTIC REGRESSION - BEN AYED MARWEN """
@@ -394,4 +407,4 @@ def validateModel(y_test, y_pred):
     acc = accuracy_score(y_test, y_pred, normalize=True)*100        #Percentage
     rec = recall_score(y_test, y_pred, average = 'binary')*100      #Percentage
     f1 = f1_score(y_test, y_pred)
-    print(f'Your model has a log_loss of : {lloss}%\nYour model has an accuracy of : {acc}%\nYour model has a recall of : {rec}%\nYour model has a F1 score = {f1} ')
+    print(f'Your model has a log_loss of : {lloss:.2f}%\nYour model has an accuracy of : {acc:.2f}%\nYour model has a recall of : {rec:.2f}%\nYour model has a F1 score = {f1:.2f} ')
