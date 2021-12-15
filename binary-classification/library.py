@@ -9,6 +9,7 @@ from scipy.stats import shapiro
 from sklearn.metrics import precision_score, recall_score
 from sklearn.model_selection import KFold
 from math import floor
+import statistics as s
 
 def count_NaN(data):
     no_NaN_data = data.notna()
@@ -292,7 +293,7 @@ def KNN(data, k=4, test_size = 0.3):
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_val_score, ShuffleSplit
 from sklearn.tree import export_graphviz
-from graphviz import Source
+#from graphviz import Source
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.metrics import log_loss
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score
@@ -305,13 +306,13 @@ def trainDecisionForest(X,y,n_trees) :
 
     # Define the max depths between 1 and 20
     n_depths = 20
-    depths = linspace(1,n_depths,n_depths//2)
+    depths = np.linspace(1,n_depths,n_depths//2)
 
     # Loop on the max_depth parameter and compute median Neg_log_loss
     tab_score_tree = np.zeros(n_depths)
     for i in range(len(depths)):
         class_tree = DecisionTreeClassifier(max_depth=depths[i])
-        tab_score_tree[i] = median(-cross_val_score(class_tree, X, y, scoring='neg_log_loss', cv=cvp))
+        tab_score_tree[i] = s.median(-cross_val_score(class_tree, X, y, scoring='neg_log_loss', cv=cvp))
         # Accuracy score = median(cross_val_score(class_tree, X, y, scoring='accuracy', cv=cvp)) 
     
     #plot(depths, tab_accuracy_tree)
