@@ -47,16 +47,16 @@ def center_and_normalize(data):
 def clean_data_f(data):
     data_na=data.notna() #renvoie une dataframe booléen
     data_types=data.dtypes #datatype of each column
-    # for k in data:
-    #     for i in range(len(data_na[k])):
-    #         #Il est possible que certains string aient des \t ou des " ", il faut les enlever
-    #         if type(data[k][i])==str:
-    #             data.at[i,k]=data[k][i].replace(" ","")
-    #             data.at[i,k]=data[k][i].replace("\t","")
-    #             #Si un des NaN avait ce genre de caractères alors ils n'étaient pas repérés et comptaient
-    #             #Pour une valeur: On modifie donc la table data_na 
-    #             if data[k][i]=="?":
-    #                 data_na.at[i,k]=False
+    for k in data:
+        for i in range(len(data_na[k])):
+            #Il est possible que certains string aient des \t ou des " ", il faut les enlever
+            if type(data[k][i])==str:
+                data.at[i,k]=data[k][i].replace(" ","")
+                data.at[i,k]=data[k][i].replace("\t","")
+                #Si un des NaN avait ce genre de caractères alors ils n'étaient pas repérés et comptaient
+                #Pour une valeur: On modifie donc la table data_na 
+                if data[k][i]=="?":
+                    data_na.at[i,k]=False
     for index in data:
         if data_types[index]==object:
             clear_data_String(data,index,data_na)
