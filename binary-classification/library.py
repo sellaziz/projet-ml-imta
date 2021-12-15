@@ -283,3 +283,87 @@ def KNN(data, k=4, test_size = 0.3):
     Train_set_Accuracy = metrics.accuracy_score(y_train, neigh.predict(X_train))
     Test_set_Accuracy = metrics.accuracy_score(y_test, y_pred)
     return Train_set_Accuracy, Test_set_Accuracy
+
+
+
+""" DECISION FOREST - AUBIN JULIEN """
+
+# Import scikit-learn functions
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import cross_val_score, ShuffleSplit
+from sklearn.tree import export_graphviz
+from graphviz import Source
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.metrics import log_loss
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score
+
+# Decision forest
+def trainDecisionForest(X,y,n_trees) :
+
+    # Cross-validation procedure
+    cvp = ShuffleSplit(n_splits=1000, test_size=1/3, train_size=2/3)
+
+    # Define the max depths between 1 and 20
+    n_depths = 20
+    depths = linspace(1,n_depths,n_depths//2)
+
+    # Loop on the max_depth parameter and compute median Neg_log_loss
+    tab_score_tree = np.zeros(n_depths)
+    for i in range(len(depths)):
+        class_tree = DecisionTreeClassifier(max_depth=depths[i])
+        tab_score_tree[i] = median(-cross_val_score(class_tree, X, y, scoring='neg_log_loss', cv=cvp))
+        # Accuracy score = median(cross_val_score(class_tree, X, y, scoring='accuracy', cv=cvp)) 
+    
+    #plot(depths, tab_accuracy_tree)
+
+    opt = (np.argmin(tab_score_tree) + 1) * 2 # depth for which we get the minimum score -> need to max Accuracy if used
+
+    # Train Decision forest :
+    class_forest = RandomForestClassifier(n_estimators=n_trees, max_depth=opt)
+    class_forest.fit(X, y)
+    return class_forest
+
+
+# Ada Boost 
+def trainAdaBoost(X,y,n_trees):
+    class_adaB = AdaBoostClassifier(n_estimators=n_trees)
+    class_adaB.fit(X,y)
+    return class_adaB
+
+#Test Decision Forest
+def testDecisionForest(DFclf, X_test) :
+    class_forest_predict = DFclf.predict(X_test)
+    return class_forest_predict
+
+
+# Test Ada Boost
+def testAdaBoost(ABclf, X_test) :
+    class_adaB_predict = ABclf.predict(X_test)
+    return class_adaB_predict
+
+
+# Export the tree to "plot_tree.pdf"
+def plotTree(class_tree, data):
+    plot_tree = export_graphviz(class_tree, out_file=None, feature_names=list(data.columns)[1:], filled=True) #data
+    graph = Source(plot_tree) 
+    graph.render("class_tree")
+
+    # Plot the tree
+    return graph
+
+
+""" MODEL VALIDATION - AUBIN JULIEN"""
+
+import seaborn as sns
+
+def confusionMatrix(y_test,y_predicted):
+    conf_mat = confusion_matrix(y_test, y_predicted)
+    conf_map = sns.heatmap(conf_mat,annot=True)
+    return conf_map
+
+def validateModel(y_test,y_pred):
+    lloss = log_loss(y_test,y_pred,normalize=True)
+    acc = accuracy_score(y_test,y_pred,normalize=True)*100
+    rec = recall_score(y_test,y_pred, average = 'binary') * 100
+    f1 = f1_score(y_test,y_pred)
+    print(f'Your model has a log_loss of : {lloss}%\nYour model has an accuracy of : {acc}%\nYour model has a recall of : {rec}%\nYour model has a F1 score = {f1} ')
