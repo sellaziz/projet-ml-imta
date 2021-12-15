@@ -216,7 +216,7 @@ def precision_recall_multilabels(y_true, y_pred, labels):
 
     return precisions, recalls
 
-""" CROSSVALIDATION - SELLAMI AZIZ """
+""" CROSS-VALIDATION - SELLAMI AZIZ """
 
 def kfold_precisions_recalls(X, y, labels, clf, kf: KFold):
     """Returns the history of precisions and recalls through K-fold training
@@ -334,6 +334,7 @@ def KNN(data, k=4, test_size = 0.3):
 """ DECISION FOREST & ADA BOOST - AUBIN JULIEN """
 
 # Decision forest
+# We define first the optimal depth using Cross-validation with accuracy score and the apply a random forest with optimal depth.
 def trainDecisionForest(X_train,y_train,n_trees) :
 
     # Cross-validation procedure
@@ -341,7 +342,7 @@ def trainDecisionForest(X_train,y_train,n_trees) :
 
     # Define the max depths between 1 and 20
     n_depths = 20
-    depths = np.linspace(1,n_depths,n_depths//2)
+    depths = np.linspace(1,n_depths,n_depths//2)    # Depths are define with a stepsize of 2, to lower time calculation
 
     # Loop on the max_depth parameter and compute median Neg_log_loss
     tab_score_tree = np.zeros(n_depths)
@@ -351,7 +352,7 @@ def trainDecisionForest(X_train,y_train,n_trees) :
         tab_score_tree[i] = s. median(cross_val_score(class_tree, X_train, y_train, scoring='accuracy', cv=cvp)) 
         
         # Neg_log_loss : tab_score_tree[i] = s.median(-cross_val_score(class_tree, X, y, scoring='neg_log_loss', cv=cvp))
-        # Need to minimize log_loss - but we have error on dimension
+        # If we use it : need to minimize log_loss - but we have error on dimension
     
     opt = (np.argmax(tab_score_tree) + 1) * 2 # depth for which we get the minimum score -> need to max Accuracy if used
     print("Optimal Depth =", opt)
@@ -363,33 +364,34 @@ def trainDecisionForest(X_train,y_train,n_trees) :
 
 
 # Ada Boost 
+# Using scikit function, we simply define the Ada Boost classifier.
 def trainAdaBoost(X,y,n_trees):
     class_adaB = AdaBoostClassifier(n_estimators=n_trees)
     class_adaB.fit(X,y)
     return class_adaB
 
-#Test Decision Forest
-def testDecisionForest(DFclf, X_test) :
-    class_forest_predict = DFclf.predict(X_test)
-    return class_forest_predict
-
-
-# Test Ada Boost
-def testAdaBoost(ABclf, X_test) :
-    class_adaB_predict = ABclf.predict(X_test)
-    return class_adaB_predict
+#Test Decision Forest & Ada Boost
+# With the Random Forest Classifier produced by trainDecisionForest(X_train,y_train,n_trees) or trainAdaBoost(X,y,n_trees),
+# we predict the labels of the data.
+def testClassifier(classifier, X_test) :
+    classifier_predict = classifier.predict(X_test)
+    return classifier_predict
 
 
 """ MODEL VALIDATION - AUBIN JULIEN"""
 
+# Confusion Matrix
+# We create the confusion matrix and then return the plot using heatmap.
 def confusionMatrix(y_test, y_predicted):
     conf_mat = confusion_matrix(y_test, y_predicted)
     conf_map = sns.heatmap(conf_mat, annot=True)
     return conf_map
 
+# Model's Metrics
+# Using scikit metrics, we calculate various metrics to estimate our model's performance.
 def validateModel(y_test, y_pred):
     lloss = log_loss(y_test, y_pred, normalize=True)
-    acc = accuracy_score(y_test, y_pred, normalize=True)*100
-    rec = recall_score(y_test, y_pred, average = 'binary') * 100
+    acc = accuracy_score(y_test, y_pred, normalize=True)*100        #Percentage
+    rec = recall_score(y_test, y_pred, average = 'binary')*100      #Percentage
     f1 = f1_score(y_test, y_pred)
     print(f'Your model has a log_loss of : {lloss}%\nYour model has an accuracy of : {acc}%\nYour model has a recall of : {rec}%\nYour model has a F1 score = {f1} ')
