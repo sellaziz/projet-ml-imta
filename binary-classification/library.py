@@ -114,20 +114,6 @@ def replace_by_Int(data):
             data[k] = data[k].astype(int)
 
 
-
-def pca(data):
-    pca = PCA(n_components = 0.99)
-    X=np.array(data)
-    pca.fit(X)
-    return pca.transform(X)
-
-
-#Faire aussi cross validation
-def split_data(data, test_size):
-    labels = data.iloc[:,-1]
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=test_size)
-    return X_train, X_test, y_train, y_test
-
 def split_data_df(data, test_size):
     features = list(data.columns[:-1])
     labels   = data.iloc[:,-1]
@@ -135,8 +121,24 @@ def split_data_df(data, test_size):
     X_train, X_test, y_train, y_test = train_test_split(X, labels, test_size=test_size)
     return X_train, X_test, y_train, y_test
 
-#En statistique, le test de Shapiro–Wilk teste l'hypothèse nulle selon laquelle un échantillon x 1 , … , x n 
-#est issu d'une population normalement distribuée. 
+
+def split_data_and_pca(data, test_size):
+
+    features = list(data.columns[:-1])
+    labels   = data.iloc[:,-1]
+    X        = data[features]
+    X_train, X_test, y_train, y_test = train_test_split(X, labels, test_size=test_size)
+
+    X_tot = np.concatenate((X_train, X_test))
+    pca = PCA(n_components = 0.99)
+    pca.fit(X_tot)
+    X_tot = pca.transform(X_tot)
+
+    X_train_PCA = X[:len(X_train)]
+    X_test_PCA = X[len(X_train):]
+    return X_train_PCA, X_test_PCA, y_train, y_test, pca.n_components_
+
+
 def shapiro_test(data):
     n = np.shape(data)[1]
     p_values = np.zeros((n))
@@ -278,7 +280,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn import metrics
 
 def KNN(data, k=4, test_size = 0.3):
-    X_train, X_test, y_train, y_test = split_data_pca(data, test_size)
+    #X_train, X_test, y_train, y_test = split_data_pca(data, test_size)
+    X_train, X_test, y_train, y_test = split_data_df(data, test_size)
     neigh = KNeighborsClassifier(n_neighbors = k).fit(X_train,y_train)
     y_pred = neigh.predict(X_test)
     Train_set_Accuracy = metrics.accuracy_score(y_train, neigh.predict(X_train))
@@ -292,8 +295,8 @@ def KNN(data, k=4, test_size = 0.3):
 # Import scikit-learn functions
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_val_score, ShuffleSplit
-from sklearn.tree import export_graphviz
-from graphviz import Source
+# from sklearn.tree import export_graphviz
+# from graphviz import Source
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.metrics import log_loss
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score
