@@ -32,6 +32,15 @@ from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_s
 """ PREPROCESSING DATASET - RIVIERE CLEMENT """
 
 def count_NaN(data):
+    """Returns the count of NaNs in the Dataframe
+    Parameters
+    ----------
+    data : pandas Dataframe
+
+    Returns
+    -------
+    countNaN : int
+    """
     no_NaN_data = data.notna()
     countNaN = np.zeros((np.shape(data)[1]))
     for k in range(np.shape(data)[1]):
@@ -42,6 +51,16 @@ def count_NaN(data):
 
 
 def replace_NaN(data):
+    """Replace the NaNs of the Dataframe by the mean of the data
+    Parameters
+    ----------
+    data : pandas Dataframe
+
+    Returns
+    -------
+    no_NaN_data           : pandas Dataframe
+    count_replaced_values : int
+    """
     no_NaN_data = data
     mean_data = np.mean(data)
     count_replaced_values = np.zeros((np.shape(data)[1]))
@@ -50,13 +69,22 @@ def replace_NaN(data):
             va_k = no_NaN_data[k]
             if va_k[i] == np.NaN:
                 count_replaced_values[k] += 1
-                va_k[i] = mean_data[k] #replace with mean
+                va_k[i] = mean_data[k] # replace with mean
     return no_NaN_data, count_replaced_values
 
 #In practice we often ignore the shape of the distribution and just transform the data to center it by removing 
 # the mean value of each feature, then scale it by dividing non-constant features by their standard deviation.
 
 def center_and_normalize(data):
+    """Center and Normalize a pandas Dataframe
+    Parameters
+    ----------
+    data : pandas Dataframe
+
+    Returns
+    -------
+    center_and_normalize : pandas Dataframe
+    """
     center_and_normalize = data
     mean_data, std_data = np.mean(data), np.std(data)
     types_data = data.dtypes
@@ -67,16 +95,26 @@ def center_and_normalize(data):
 
 
 def clean_data_f(data):
-    data_na=data.notna() #renvoie une dataframe booléen
-    data_types=data.dtypes #datatype of each column
+    """Cleaning function for the datasets, that center and normalize the data and 
+       replace strings by integers
+    Parameters
+    ----------
+    data : pandas Dataframe
+
+    Returns
+    -------
+    data : pandas Dataframe
+    """
+    data_na=data.notna() # renvoie une dataframe booléen
+    data_types=data.dtypes # datatype of each column
     for k in data:
         for i in range(len(data_na[k])):
-            #Il est possible que certains string aient des \t ou des " ", il faut les enlever
+            # Il est possible que certains string aient des \t ou des " ", il faut les enlever
             if type(data[k][i])==str:
                 data.at[i,k]=data[k][i].replace(" ","")
                 data.at[i,k]=data[k][i].replace("\t","")
-                #Si un des NaN avait ce genre de caractères alors ils n'étaient pas repérés et comptaient
-                #Pour une valeur: On modifie donc la table data_na 
+                # Si un des NaN avait ce genre de caractères alors ils n'étaient pas repérés et comptaient
+                # Pour une valeur: On modifie donc la table data_na 
                 if data[k][i]=="?":
                     data_na.at[i,k]=False
     for index in data:
@@ -93,6 +131,15 @@ def clean_data_f(data):
 
 
 def clear_data_String(data,k,data_na):
+    """
+    Parameters
+    ----------
+    data : pandas Dataframe
+
+    Returns
+    -------
+    data : pandas Dataframe
+    """
     list_value={}
     data_na=data_na[k]
     for value in range(len(data_na)):
@@ -111,6 +158,15 @@ def clear_data_String(data,k,data_na):
 
 
 def clear_data_Float_Int(data,k,int_or_float):
+    """
+    Parameters
+    ----------
+    data : pandas Dataframe
+
+    Returns
+    -------
+    data : pandas Dataframe
+    """
     moy=data[k].mean()
     data_na=data[k].isna()
     if int_or_float==int:
@@ -124,6 +180,15 @@ def clear_data_Float_Int(data,k,int_or_float):
 
 
 def replace_by_Int(data):
+    """
+    Parameters
+    ----------
+    data : pandas Dataframe
+
+    Returns
+    -------
+    data : pandas Dataframe
+    """
     data_types=data.dtypes #datatype of each column
     for k in data:
         if data_types[k]==object:
@@ -142,6 +207,17 @@ def replace_by_Int(data):
 """ DATASET MANAGEMENT - SELLAMI AZIZ """
 
 def dataset_to_numpy(data, first_col=0, last_col=-1):
+    """Convert dataframe to a numpy array and select the columns to keep
+    Parameters
+    ----------
+    data      : pandas Dataframe
+    first_col : (int) first column to select
+    last_col  : (int) last column to select
+
+    Returns
+    -------
+    np.array
+    """
     set_of_data=[]
     for col in data.columns:
         tmp_data = data[col]
@@ -152,6 +228,19 @@ def dataset_to_numpy(data, first_col=0, last_col=-1):
 """ SPLIT DATASET & PCA - RIVIERE CLEMENT """
 
 def split_data_df(data, test_size):
+    """Split training and testing data from a Dataframe
+    Parameters
+    ----------
+    data      : pandas Dataframe
+    test_size : int
+
+    Returns
+    -------
+    X_train : np.array
+    X_test  : np.array
+    y_train : np.array
+    y_test  : np.array
+    """
     features = list(data.columns[:-1])
     labels   = data.iloc[:,-1]
     X        = data[features]
@@ -160,7 +249,19 @@ def split_data_df(data, test_size):
 
 
 def split_data_and_pca(data, test_size):
+    """Split training and testing data from a Dataframe and apply PCA
+    Parameters
+    ----------
+    data      : pandas Dataframe
+    test_size : int
 
+    Returns
+    -------
+    X_train : np.array
+    X_test  : np.array
+    y_train : np.array
+    y_test  : np.array
+    """
     features = list(data.columns[:-1])
     labels   = data.iloc[:,-1]
     X        = data[features]
@@ -177,6 +278,15 @@ def split_data_and_pca(data, test_size):
 
 
 def pca(data):
+    """Apply PCA
+    Parameters
+    ----------
+    data      : pandas Dataframe
+
+    Returns
+    -------
+    np.array
+    """
     pca = PCA(n_components = 0.99)
     X=np.array(data)
     pca.fit(X)
@@ -186,6 +296,15 @@ def pca(data):
 """ SHAPIRO TEST - RIVIERE CLEMENT """
 
 def shapiro_test(data):
+    """Apply Shapiro Test, to test gaussianity of the data
+    Parameters
+    ----------
+    data      : pandas Dataframe
+
+    Returns
+    -------
+    np.array
+    """
     n = np.shape(data)[1]
     p_values = np.zeros((n))
     for k in range(n):
@@ -197,6 +316,17 @@ def shapiro_test(data):
 """ MODEL VALIDATION : PRECISION & RECALL - SELLAMI AZIZ """
 
 def precision_recall(y_true, y_pred, labels=[0,1]):
+    """Compute precision and recall for each classes
+    Parameters
+    ----------
+    y_true : (np.array) True labels
+    y_pred : (np.array) predicted labels
+
+    Returns
+    -------
+    precisions : list
+    recalls : list
+    """
     recalls = []
     precisions = []
     for label in labels:
@@ -310,6 +440,17 @@ def crossValidation(X,y,clfs,classes_labels=[0,1], n_spl=10):
 
 """ SVM - SELLAMI AZIZ """
 def testSVM(X,y):
+    """Test SVM classification with simple classifier
+    Parameters
+    ----------
+    X : (np.array) Features
+    y : (np.array) labels
+
+    Returns
+    -------
+    precisions : float
+    recalls : float
+    """
     clf = svm.SVC()
     train_size = 100
     X_train, X_test, y_train, y_test = train_test_split(
@@ -326,15 +467,38 @@ def testSVM(X,y):
 """ LOGISTIC REGRESSION - BEN AYED MARWEN """
 
 def Logistic_regression(X_train,X_test,y_train,y_test):
+    """Compute Logistic Regression
+    Parameters
+    ----------
+    X_train : np.array
+    X_test  : np.array
+    y_train : np.array
+    y_test  : np.array
+
+    Returns
+    -------
+    y_pred  : np.array
+    """
     LR = LogisticRegression().fit(X_train,y_train)
     y_pred = LR.predict(X_test)
-    f1_scor = f1_score(y_test, y_pred, average='weighted')
     return y_pred
 
 
 """ K-NEAREST NEIGHBOUR - BEN AYED MARWEN """
 
 def KNN(data, k=4, test_size = 0.3):
+    """Compute KNN
+    Parameters
+    ----------
+    X_train   : data
+    k         : int
+    test_size : float (<1)
+
+    Returns
+    -------
+    Train_set_Accuracy  : float
+    Test_set_Accuracy   : float
+    """
     #X_train, X_test, y_train, y_test = split_data_pca(data, test_size)
     X_train, X_test, y_train, y_test = split_data_df(data, test_size)
     neigh = KNeighborsClassifier(n_neighbors = k).fit(X_train,y_train)
@@ -349,7 +513,17 @@ def KNN(data, k=4, test_size = 0.3):
 # Decision forest
 # We define first the optimal depth using Cross-validation with accuracy score and the apply a random forest with optimal depth.
 def trainDecisionForest(X_train,y_train,n_trees) :
+    """Train and return a Decision Forest
+    Parameters
+    ----------
+    X_train   : (np.array) training data
+    y_train   : (np.array) training labels
+    n_trees   : int
 
+    Returns
+    -------
+    class_forest  : decision forest classifier
+    """
     # Cross-validation procedure
     cvp = ShuffleSplit(n_splits=100, test_size=1/3, train_size=2/3)
 
@@ -379,6 +553,17 @@ def trainDecisionForest(X_train,y_train,n_trees) :
 # Ada Boost 
 # Using scikit function, we simply define the Ada Boost classifier.
 def trainAdaBoost(X,y,n_trees):
+    """Train and return a AdaBoost Classifier
+    Parameters
+    ----------
+    X   : (np.array) training data
+    y   : (np.array) training labels
+    n_trees   : int
+
+    Returns
+    -------
+    class_adaB  : AdaBoost classifier
+    """
     class_adaB = AdaBoostClassifier(n_estimators=n_trees)
     class_adaB.fit(X,y)
     return class_adaB
@@ -387,6 +572,16 @@ def trainAdaBoost(X,y,n_trees):
 # With the Random Forest Classifier produced by trainDecisionForest(X_train,y_train,n_trees) or trainAdaBoost(X,y,n_trees),
 # we predict the labels of the data.
 def testClassifier(classifier, X_test) :
+    """Test Decision Forest & Ada Boost
+    Parameters
+    ----------
+    classifier : classifier to test
+    X_test     : (np.array) test data
+
+    Returns
+    -------
+    classifier_predict  : (np.array) prediction
+    """
     classifier_predict = classifier.predict(X_test)
     return classifier_predict
 
@@ -396,6 +591,16 @@ def testClassifier(classifier, X_test) :
 # Confusion Matrix
 # We create the confusion matrix and then return the plot using heatmap.
 def confusionMatrix(y_test, y_predicted):
+    """Plot a Confusion Matrix
+    Parameters
+    ----------
+    y_test      : (np.array)
+    y_predicted : (np.array)
+
+    Returns
+    -------
+    conf_map  : plot
+    """
     conf_mat = confusion_matrix(y_test, y_predicted)
     conf_map = sns.heatmap(conf_mat, annot=True)
     return conf_map
@@ -403,6 +608,12 @@ def confusionMatrix(y_test, y_predicted):
 # Model's Metrics
 # Using scikit metrics, we calculate various metrics to estimate our model's performance.
 def validateModel(y_test, y_pred):
+    """Using scikit metrics, we calculate various metrics to estimate our model's performance.
+    Parameters
+    ----------
+    y_test      : (np.array)
+    y_predicted : (np.array)
+    """
     lloss = log_loss(y_test, y_pred, normalize=True)
     acc = accuracy_score(y_test, y_pred, normalize=True)*100        #Percentage
     rec = recall_score(y_test, y_pred, average = 'binary')*100      #Percentage
