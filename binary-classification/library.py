@@ -47,16 +47,16 @@ def center_and_normalize(data):
 def clean_data_f(data):
     data_na=data.notna() #renvoie une dataframe booléen
     data_types=data.dtypes #datatype of each column
-    # for k in data:
-    #     for i in range(len(data_na[k])):
-    #         #Il est possible que certains string aient des \t ou des " ", il faut les enlever
-    #         if type(data[k][i])==str:
-    #             data.at[i,k]=data[k][i].replace(" ","")
-    #             data.at[i,k]=data[k][i].replace("\t","")
-    #             #Si un des NaN avait ce genre de caractères alors ils n'étaient pas repérés et comptaient
-    #             #Pour une valeur: On modifie donc la table data_na 
-    #             if data[k][i]=="?":
-    #                 data_na.at[i,k]=False
+    for k in data:
+        for i in range(len(data_na[k])):
+            #Il est possible que certains string aient des \t ou des " ", il faut les enlever
+            if type(data[k][i])==str:
+                data.at[i,k]=data[k][i].replace(" ","")
+                data.at[i,k]=data[k][i].replace("\t","")
+                #Si un des NaN avait ce genre de caractères alors ils n'étaient pas repérés et comptaient
+                #Pour une valeur: On modifie donc la table data_na 
+                if data[k][i]=="?":
+                    data_na.at[i,k]=False
     for index in data:
         if data_types[index]==object:
             clear_data_String(data,index,data_na)
@@ -257,12 +257,19 @@ def kfold_summarize_results(clfs_results):
             }
     return clfs_stats
 
-def dataset_to_numpy(data):
+def dataset_to_numpy(data, first_col=0, last_col=-1):
     set_of_data=[]
     for col in data.columns:
         tmp_data = data[col]
         set_of_data.append(tmp_data.to_numpy().T)
-    return np.vstack(tuple(set_of_data[1:-1])).T
+    return np.vstack(tuple(set_of_data[first_col:last_col])).T
+
+
+def pca(data):
+    pca = PCA(n_components = 0.99)
+    X=np.array(data)
+    pca.fit(X)
+    return pca.transform(X)
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import jaccard_score
