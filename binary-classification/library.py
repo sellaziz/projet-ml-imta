@@ -172,8 +172,8 @@ def split_data_and_pca(data, test_size):
     pca.fit(X_tot)
     X_tot = pca.transform(X_tot)
 
-    X_train_PCA = X[:len(X_train)]
-    X_test_PCA = X[len(X_train):]
+    X_train_PCA = X_tot[:len(X_train)]
+    X_test_PCA = X_tot[len(X_train):]
     return X_train_PCA, X_test_PCA, y_train, y_test, pca.n_components_
 
 
